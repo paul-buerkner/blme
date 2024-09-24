@@ -26,7 +26,7 @@ getRanefStructure <- function(pred, resp, reTrms) {
                          numFactors = length(reTrms$cnms))
   ranefStructure$numGroupsPerFactor <- as.integer(ranefStructure$numRanefPerFactor / ranefStructure$numCoefPerFactor + 0.5)
   ranefStructure$lower <- as.numeric(unlist(sapply(ranefStructure$numCoefPerFactor, getThetaLowerBoundsForDimension)))
-  
+
   ranefStructure
 }
 
@@ -36,7 +36,7 @@ createBlmerControl <- function(pred, resp, priors)
   constant <- 0 ## normalizing constants and the like. On deviance (-2 log) scale
 
   numFactors <- length(priors$covPriors)
- 
+
   df <- df + getDFAdjustment(priors$fixefPrior) + getResidPriorDFAdjustment(priors$residPrior)
   constant <- constant + getConstantTerm(priors$fixefPrior) + getConstantTerm(priors$residPrior)
 
@@ -47,7 +47,7 @@ createBlmerControl <- function(pred, resp, priors)
 
   fixefOptimizationType <- getFixefOptimizationType(pred, resp, priors)
   sigmaOptimizationType <- getSigmaOptimizationType(resp, priors)
-  
+
   namedList(df, constant, fixefOptimizationType, sigmaOptimizationType)
 }
 
@@ -57,12 +57,14 @@ FIXEF_OPTIM_LINEAR  <- "linear"  ## mle found by root of linear equation. or, do
 getFixefOptimizationType <- function(pred, resp, priors)
 {
   if (length(pred$X) == 0) return(FIXEF_OPTIM_NA)
-  
+
   if (!is(resp, "lmerResp")) return(FIXEF_OPTIM_NUMERIC)
-  
+
   fixefPrior <- priors$fixefPrior
-  
-  if (is(fixefPrior, "bmerTDist") || is(fixefPrior, "bmerHorseshoeDist")) return(FIXEF_OPTIM_NUMERIC)
+
+  if (is(fixefPrior, "bmerTDist") ||
+      is(fixefPrior, "bmerHorseshoeDist") ||
+      is(fixefPrior, "bmerLassoDist")) return(FIXEF_OPTIM_NUMERIC)
 
   FIXEF_OPTIM_LINEAR
 }
@@ -79,24 +81,26 @@ SIGMA_OPTIM_QUADRATIC    <- "sigma.quadratic"    ## sigma.hat is root to quadrat
 getSigmaOptimizationType <- function(resp, priors)
 {
   if (!is(resp, "lmerResp")) return(SIGMA_OPTIM_NA)
-  
+
   fixefPrior <- priors$fixefPrior
   covPriors  <- priors$covPriors
   residPrior <- priors$residPrior
 
   if (is(residPrior, "bmerPointDist")) return(SIGMA_OPTIM_POINT)
-  
+
   if (is(fixefPrior, "bmerNormalDist") && fixefPrior@commonScale == FALSE)
     return(SIGMA_OPTIM_NUMERIC)
-  if ((is(fixefPrior, "bmerTDist") || is(fixefPrior, "bmerHorseshoeDist")) && fixefPrior@commonScale == TRUE)
+  if ((is(fixefPrior, "bmerTDist") ||
+       is(fixefPrior, "bmerHorseshoeDist") ||
+       is(fixefPrior, "bmerLassoDist")) && fixefPrior@commonScale == TRUE)
     return(SIGMA_OPTIM_NUMERIC)
-  
+
   exponentialTerms <- c()
   for (i in seq_along(covPriors)) {
     covPrior.i <- covPriors[[i]]
 
     if (is(covPrior.i, "bmerCustomDist") && covPrior.i@commonScale == FALSE) return(SIGMA_OPTIM_NUMERIC)
-    
+
     exponentialTerm <- getExponentialSigmaPower(covPrior.i)
     if (exponentialTerm != 0) exponentialTerms <- union(exponentialTerms, exponentialTerm)
   }
@@ -105,9 +109,9 @@ getSigmaOptimizationType <- function(resp, priors)
 
   ## exp(-0.5 * sigma^-2 * stuff) always happens, so other terms are "extra"
   extraExponentialTerms <- setdiff(exponentialTerms, -2)
-  
+
   if (length(extraExponentialTerms) == 0L) return(SIGMA_OPTIM_SQ_LINEAR)
-  
+
   if (length(extraExponentialTerms) > 1L || !(extraExponentialTerms %in% c(-1, 2)))
     return(SIGMA_OPTIM_NUMERIC)
 

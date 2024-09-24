@@ -1,2 +1,4 @@
 .DS_Store
 *\.swp
+.Rproj.user
+tests_internal/

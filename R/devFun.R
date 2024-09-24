@@ -5,9 +5,9 @@ mkBlmerDevfun <- function(fr, X, reTrms, REML = TRUE, start = NULL,
   devFunEnv <- environment(devfun)
   pred <- devFunEnv$pp
   resp <- devFunEnv$resp
-  
+
   devFunEnv$ranefStructure <- getRanefStructure(pred, resp, reTrms)
-  
+
   if (is.null(priors)) priors <- list()
   devFunEnv$priors <-
     evaluatePriorArguments(priors$covPriors, priors$fixefPrior, priors$residPrior,
@@ -15,7 +15,7 @@ mkBlmerDevfun <- function(fr, X, reTrms, REML = TRUE, start = NULL,
                            colnames(X),
                            reTrms$cnms, devFunEnv$ranefStructure$numGroupsPerFactor,
                            env)
-  
+
   devFunEnv$blmerControl <- createBlmerControl(pred, resp, devFunEnv$priors)
   devFunEnv$parInfo <- getParInfo(pred, resp, devFunEnv$ranefStructure, devFunEnv$blmerControl)
   devFunBody <- getBlmerDevianceFunctionBody(devFunEnv)
@@ -35,7 +35,7 @@ mkBglmerDevfun <- function(fr, X, reTrms, family, nAGQ = 1L, verbose = 0L,
     } else {
      mkGlmerDevfun(fr, X, reTrms, family, nAGQ, verbose, maxit, control, ...)
     }
-  
+
   devFunEnv <- environment(devfun)
   pred <- devFunEnv$pp
   resp <- devFunEnv$resp
@@ -49,14 +49,14 @@ mkBglmerDevfun <- function(fr, X, reTrms, family, nAGQ = 1L, verbose = 0L,
                            reTrms$cnms, devFunEnv$ranefStructure,
                            env)
 
-  
+
   devFunEnv$blmerControl <- createBlmerControl(pred, resp, devFunEnv$priors)
   devFunEnv$parInfo <- getParInfo(pred, resp, devFunEnv$ranefStructure, devFunEnv$blmerControl)
 
   devFunBody <- getBglmerDevianceFunctionBody(devFunEnv, nAGQ != 0L)
 
   if (!is.null(devFunBody)) body(devfun) <- parse(text = devFunBody)
-  
+
   devfun
 }
 
@@ -69,10 +69,10 @@ makeRefitDevFun <- function(env, nAGQ = 1L, verbose = 0, maxit=100L,
       get("mkdevfun", lme4Namespace)(env, nAGQ, verbose, control)
     } else
       get("mkdevfun", lme4Namespace)(env, nAGQ, maxit, verbose, control)
-  
+
   pred <- env$pp
   resp <- env$resp
-  
+
   env$maxit <- as.integer(maxit)
   env$lower <- object@lower
   env$priors <- object@priors
@@ -85,9 +85,9 @@ makeRefitDevFun <- function(env, nAGQ = 1L, verbose = 0, maxit=100L,
       getBlmerDevianceFunctionBody(env)
     else
       getBglmerDevianceFunctionBody(env, nAGQ != 0L)
-  
+
   if (!is.null(devFunBody)) body(devfun) <- parse(text = devFunBody)
-  
+
   devfun
 }
 
@@ -106,11 +106,11 @@ updateBglmerDevfun <- function(devfun, reTrms, nAGQ = 1L) {
 getBlmerDevianceFunctionBody <- function(devFunEnv)
 {
   priors <- devFunEnv$priors
-  
+
   if (!anyPriorsApplied(priors)) return(NULL)
 
   blmerControl <- devFunEnv$blmerControl
-  
+
   sigmaOptimizationType <- blmerControl$sigmaOptimizationType
   fixefOptimizationType <- blmerControl$fixefOptimizationType
 
@@ -124,7 +124,7 @@ getBlmerDevianceFunctionBody <- function(devFunEnv)
   cat("  expandParsInCurrentFrame(theta, parInfo)\n",
       "  pp$setTheta(as.double(theta))\n\n", sep = "")
   devFunEnv$expandParsInCurrentFrame <- expandParsInCurrentFrame
-  
+
   if (sigmaOptimizationType == SIGMA_OPTIM_POINT)
     cat("  sigma <- priors$residPrior@value\n")
 
@@ -164,7 +164,7 @@ getBlmerDevianceFunctionBody <- function(devFunEnv)
     cat("  exponentialTerms <- calculateFixefExponentialTerm(beta, pp$beta(1.0), pp$RX(), exponentialTerms)\n")
     devFunEnv$calculateFixefExponentialTerm <- calculateFixefExponentialTerm
   }
-  
+
   if (sigmaOptimizationType != SIGMA_OPTIM_NUMERIC &&
       sigmaOptimizationType != SIGMA_OPTIM_POINT) {
     cat("  sigma <- profileSigma(pp, resp, exponentialTerms, blmerControl)\n\n", sep = "")
@@ -173,12 +173,12 @@ getBlmerDevianceFunctionBody <- function(devFunEnv)
 
   cat("  lmmObjective(pp, resp, sigma, exponentialTerms, polynomialTerm, blmerControl)\n")
   devFunEnv$lmmObjective <- lmmObjective
-  
+
   cat("}\n")
-  
+
   sink()
   close(stringConnection)
-  
+
   devFunBody
 }
 
@@ -203,11 +203,11 @@ getSigmaProfiler <- function(priors, blmerControl) {
       pwrss <- resp$wrss() + pp$sqrL(1.0)
       if (!is.null(exponentialTerms[["-2"]])) pwrss <- pwrss + exponentialTerms[["-2"]]
       a <- exponentialTerms[["2"]]
-      
+
       df <- nrow(pp$X) - resp$REML + blmerControl$df
 
       disc <- sqrt(df^2 + 4 * pwrss * a)
-      
+
       sqrt((disc - df) / (2 * a))
     })
   } else if (sigmaOptimizationType == SIGMA_OPTIM_QUADRATIC) {
@@ -215,11 +215,11 @@ getSigmaProfiler <- function(priors, blmerControl) {
       pwrss <- resp$wrss() + pp$sqrL(1.0)
       if (!is.null(exponentialTerms[["-2"]])) pwrss <- pwrss + exponentialTerms[["-2"]]
       a <- exponentialTerms[["-1"]]
-      
+
       df <- nrow(pp$X) - resp$REML + blmerControl$df
 
       disc <- sqrt(a^2 + 16 * df * pwrss)
-      
+
       0.25 * (disc + a) / df
     })
   } else stop("illegal sigma optimization type")
@@ -233,7 +233,9 @@ calculatePriorExponentialTerms <- function(priors, beta, Lambda.ts, sigma = NULL
   residPrior <- priors$residPrior
 
   if (!is.null(fixefPrior)) {
-    if ((is(fixefPrior, "bmerTDist") || is(fixefPrior, "bmerHorseshoeDist")) && fixefPrior@commonScale == TRUE) {
+    if ((is(fixefPrior, "bmerTDist") ||
+         is(fixefPrior, "bmerHorseshoeDist") ||
+         is(fixefPrior, "bmerLassoDist")) && fixefPrior@commonScale == TRUE) {
       term <- getExponentialTerm(fixefPrior, beta, sigma)
     } else {
       term <- getExponentialTerm(fixefPrior, beta)
@@ -257,7 +259,7 @@ calculatePriorExponentialTerms <- function(priors, beta, Lambda.ts, sigma = NULL
   }
 
   if (is.null(residPrior)) return(result)
-  
+
   term <- getExponentialTerm(residPrior)
   power <- toString(term[1L])
   exponential <- term[2L]
@@ -277,7 +279,7 @@ calculateFixefExponentialTerm <- function(beta, beta.tilde, RX, exponentialTerms
 {
   exponential <- crossprod(RX %*% (beta - beta.tilde))[1L]
   if (is.null(exponentialTerms)) return(exponential)
-  
+
   if (is.null(exponentialTerms[["-2"]])) {
     exponentialTerms[["-2"]] <- exponential
   } else {
@@ -290,11 +292,11 @@ testGetBglmerDevianceFunctionBody <- function(devFun)
 {
   devFunEnv <- environment(devFun)
   priors <- devFunEnv$priors
-  
+
   if (!anyPriorsApplied(priors)) return(NULL)
 
   fixefPrior <- priors$fixefPrior
-  
+
   devFunBody <- NULL
   stringConnection <- textConnection("devFunBody", "w", local = TRUE)
   sink(stringConnection)
@@ -305,7 +307,7 @@ testGetBglmerDevianceFunctionBody <- function(devFun)
       "  polynomialTerm   <- calculatePriorPolynomialTerm(priors$covPriors, Lambda.ts)\n\n",
       "  ",
       sep = "")
-  
+
   oldDevFunBody <- deparse(body(devFun))
   cat(oldDevFunBody[-length(oldDevFunBody)], sep = "\n") ## cut trailing "}"
 
@@ -314,14 +316,14 @@ testGetBglmerDevianceFunctionBody <- function(devFun)
 
   sink()
   close(stringConnection)
-  
+
   devFunBody
 }
 
 getBglmerDevianceFunctionBody <- function(devFunEnv, fixefAreParams)
 {
   priors <- devFunEnv$priors
-  
+
   if (!anyPriorsApplied(priors)) return(NULL)
 
   fixefPrior <- priors$fixefPrior
@@ -356,22 +358,22 @@ getBglmerDevianceFunctionBody <- function(devFunEnv, fixefAreParams)
       cat("  p <- pwrssUpdate(pp, resp, tolPwrss, GQmat, compDev, fac, maxit=maxit, verbose=verbose)\n")
     }
   }
-  
+
   cat("  resp$updateWts()\n\n",
-      
+
       "  Lambda.ts <- getCovBlocks(pp$Lambdat, ranefStructure)\n",
       "  exponentialTerms <- calculatePriorExponentialTerms(priors, spars, Lambda.ts)\n",
       "  polynomialTerm <- calculatePriorPolynomialTerm(priors$covPriors, Lambda.ts)\n\n",
-      
+
       "  p + exponentialTerms[[1]] + polynomialTerm + blmerControl$constant\n",
       "}\n",
       sep = "")
   devFunEnv$getCovBlocks <- getCovBlocks
   devFunEnv$calculatePriorExponentialTerms <- calculatePriorExponentialTerms
   devFunEnv$calculatePriorPolynomialTerm <- calculatePriorPolynomialTerm
-  
+
   sink()
   close(stringConnection)
-  
+
   devFunBody
 }
