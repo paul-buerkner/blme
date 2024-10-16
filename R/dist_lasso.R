@@ -35,7 +35,10 @@ setMethod("getExponentialTerm", "bmerLassoDist",
     beta.0 <- object@beta.0
     lambda <- object@lambda
     c <- object@c
-    result <- lambda * sum(sqrt((beta - beta.0)^2 + c))
+
+    # beta[-1] will exclude the intercept from the penalty
+    # this approach is course not be ideal in models without an intercept
+    result <- lambda * sum(sqrt((beta[-1] - beta.0)^2 + c))
     if (object@commonScale == TRUE && !is.null(sigma)) {
       result <- result / sigma^2
     }
