@@ -37,7 +37,7 @@ setMethod("getExponentialTerm", "bmerHorseshoeDist",
 
     # beta[-1] will exclude the intercept from the penalty
     # this approach is course not be ideal in models without an intercept
-    dist <- 0.5 * (beta[-1] - beta.0)^2 / tau.sq
+    dist <- 0.5 * (beta[-1] - beta.0[-1])^2 / tau.sq
     if (object@commonScale == TRUE && !is.null(sigma)) dist <- dist / sigma^2
 
     temp <- suppressWarnings(sapply(dist, expint::expint_E1, scale = TRUE))
