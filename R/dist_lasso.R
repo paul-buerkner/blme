@@ -44,7 +44,8 @@ setMethod("getExponentialTerm", "bmerLassoDist",
     # beta[-1] will exclude the intercept from the penalty
     # this approach is course not be ideal in models without an intercept
     # TODO: figure out how to smartly exclude the intercept
-    result <- lambda * sum(sqrt((beta[-1] - beta.0[-1])^2 + c))
+    # we multiply with two since lme4 optimizes deviances
+    result <- 2 * lambda * sum(sqrt((beta[-1] - beta.0[-1])^2 + c))
     if (object@commonScale == TRUE && !is.null(sigma)) {
       result <- result / sigma
     }
