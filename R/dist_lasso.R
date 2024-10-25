@@ -26,8 +26,12 @@ setMethod("getDFAdjustment", "bmerLassoDist",
 )
 setMethod("getConstantTerm", "bmerLassoDist",
   function(object) {
-    # TODO: add the correct constant term of the lasso prior
-    0
+    # the normalizing constant becomes non-analytic for c != 0
+    # hence, we always use the normalizing constant for c = 0
+    # since c is usually small, this should be accurate enough
+    # and for model estimation the constant is irrelevant anyway
+    d <- length(object@beta.0)
+    d * (log(2) - log(object@lambda))
   }
 )
 setMethod("getExponentialTerm", "bmerLassoDist",
