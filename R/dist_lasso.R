@@ -30,7 +30,8 @@ setMethod("getConstantTerm", "bmerLassoDist",
     # hence, we always use the normalizing constant for c = 0
     # since c is usually small, this should be accurate enough
     # and for model estimation the constant is irrelevant anyway
-    d <- length(object@beta.0)
+    # the - 1 excludes the intercept for now
+    d <- length(object@beta.0) - 1
     d * (log(2) - log(object@lambda))
   }
 )
@@ -42,7 +43,7 @@ setMethod("getExponentialTerm", "bmerLassoDist",
 
     # beta[-1] will exclude the intercept from the penalty
     # this approach is course not be ideal in models without an intercept
-    result <- lambda * sum(sqrt((beta[-1] - beta.0)^2 + c))
+    result <- lambda * sum(sqrt((beta[-1] - beta.0[-1])^2 + c))
     if (object@commonScale == TRUE && !is.null(sigma)) {
       result <- result / sigma
     }
